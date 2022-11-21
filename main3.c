@@ -4,75 +4,59 @@
 #include <stdlib.h>
 #include <time.h>
 
-// #define   MAX_COUNT  30
-
-void  ChildProcess(int);                /* child process prototype  */
-void  ParentProcess(int);               /* parent process prototype */
-int   RandomNumberGenerator();     
-
-#define   MAX_COUNT  RandomNumberGenerator()
+void  ChildProcess(void);                /* child process prototype  */
+void  ParentProcess(void);               /* parent process prototype */
 
 void  main(void)
 {
      pid_t   c1_pid, c2_pid;  
-     int     status;
-     int     x;
 
-     (c1_pid = fork()) && (c2_pid = fork());    // creates two child processes
+     c1_pid = fork();
 
-     if (c1_pid == 0)
-          // child 1 code
-          ChildProcess(c1_pid);
-     else if (c2_pid == 0)
-          // child 2 code
-          ChildProcess(c2_pid);
-     else
-          // parent code
-          wait(&status);
-          ParentProcess(status);
-           
+     if (c1_pid == 0) {
+          ChildProcess();
+          exit(0);
+     } else if (c1_pid < 0) {
+          printf("Error, first child process not created.");
+     } else {
+          ParentProcess();
+          c2_pid = fork();
+          if (c2_pid == 0) {
+              ChildProcess();
+              exit(0);
+          } else if (c2_pid < 0) {
+              printf("Error, first child process not created.");
+          } else { 
+              ParentProcess();
+          }
+     }
+     return;      
 }
 
-void  ChildProcess(int pid_t)
+void  ChildProcess(void)
 {
-     int   i;
-     int   nap_time;
-     int   pid;
-     int   ppid;
+     int      i;
+     int      iter;
+     time_t   nap_time;
 
-     pid = getpid();
-     ppid = getppid();
-
-     for (i = 1; i <= MAX_COUNT; i++)
-          printf("Child Pid: %d is going to sleep!\n", i);
+     srand((unsigned) time(&nap_time));
+     iter = rand() % 30;
+     
+     printf("New child. Sleeping for %d iterations.\n", iter);
+     for (i = 1; i < iter; i++) {
+          printf("Child Pid: %d is going to sleep!\n", getpid());
           
-          srand(time(0));
-          nap_time = (rand() % 10) + 1;
+          unsigned nap_time = rand() % 10;
           sleep(nap_time);
 
-          printf("Child Pid: %d is awake!\nWhere is my Parent: %d?\n", pid, ppid);
-
-     exit(0);
+          printf("Child Pid: %d is awake!\nWhere is my Parent: %d?\n", getpid(), getppid());
+      }
 }
 
-void  ParentProcess(int status)
+void  ParentProcess(void)
 {
-     int   pid;
-     int   ppid;
-
-     pid = getpid();
-     ppid = getppid();
+     int    status;
+     pid_t  pid = wait(&status);
 
      printf("Child Pid: %d has completed\n", pid);
-}
-
-int  RandomNumberGenerator()
-{
-     srand(time(0));
-
-     int   rand_num;
-
-     rand_num = (rand() % 30) + 1;
-     printf("%d\n", rand_num);
-     return rand_num;
 }
